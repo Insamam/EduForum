@@ -13,7 +13,7 @@ const Home = () => {
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Learn Together, Grow Together</h1>
           <p className="text-xl mb-8 max-w-3xl mx-auto">
-            A community-driven Q&A platform for school students in Grades 1-12.
+            A community-driven Q&A platform for school students in Grades 10-12.
             Ask questions, share knowledge, and learn from your peers.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
