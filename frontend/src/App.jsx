@@ -10,6 +10,7 @@ import QuestionDetail from './component/QuestionDetail.jsx';
 import StudentLogin from './component/StudentLogin.jsx';
 import StudentRegister from './component/StudentRegister.jsx';
 import Profile from './component/Profile.jsx';
+import ChatBot from './component/ChatBot.jsx'
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -50,6 +51,7 @@ const App = () => {
         <Route path="/student-login" element={<StudentLogin setUser={setUser} />} />
         <Route path="/student-register" element={<StudentRegister />} />
         <Route path= "/profile" element={<Profile />} />
+        <Route path= "/chatbot" element = {<ChatBot />} />
       </Routes>
       <Footer />
     </div>
