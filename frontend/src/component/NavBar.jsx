@@ -13,9 +13,11 @@ const NavBar = ({ user, setUser }) => {
   if (error) {
     console.error("Logout Error:", error.message);
   } else {
-    setUser(null); // Ensure user state is cleared
+    setUser(null);
+    localStorage.removeItem("supabaseSession"); // Ensure session is cleared
   }
 };
+
 
 
   return (
