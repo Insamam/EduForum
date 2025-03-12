@@ -50,41 +50,41 @@ function ChatBot() {
         }
     }, [messages]);
 
-        return (
-            <div className="flex flex-col h-screen w-screen bg-gray-10">
-                <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-80 py-4"> 
-                    {messages.map((message, index) => (
-                        <div
-                            key={index}
-                            className={`max-w-[50%] px-4 py-2 rounded-lg ${
-                                message.role === 'user'
-                                 ? 'bg-gray-200 text-blue self-end ml-auto text-right w-full' 
+    return (
+        <div className="flex flex-col h-screen w-screen bg-gray-10">
+            {/* Chat Messages Container */}
+            <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-80 py-4 pb-16"> 
+                {messages.map((message, index) => (
+                    <div
+                        key={index}
+                        className={`max-w-[50%] px-4 py-2 rounded-lg ${
+                            message.role === 'user'
+                                ? 'bg-gray-200 text-blue self-end ml-auto text-right w-full' 
                                 : 'border border-gray-300 text-black self-start w-full text-left'
-                    
-                            }`}
-                        
-                                                    dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br/>') }}
->
-                        </div>
-                    ))}
-               
-        
-                <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-gray-30 w-full"> 
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                        placeholder="Type your message..."
-                        className="flex-1 p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br/>') }}
                     />
-                    <button
-                        onClick={sendMessage}
-                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-                    >
-                        Send
-                    </button> </div>
-                </div>
+                ))} 
             </div>
-        );}
-export default ChatBot;
+    
+            {/* Static Input Field */}
+            <div className="fixed bottom-0 left-0 right-0 flex items-center gap-2 px-65 py-5 bg-white border-t border-gray-30 ">
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                    placeholder="Type your message..."
+                    className="flex-1 p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                    onClick={sendMessage}
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                >
+                    Send
+                </button>
+            </div>
+        </div>
+    );
+}
+export default ChatBot;    
