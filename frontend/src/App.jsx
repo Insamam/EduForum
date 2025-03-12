@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route,useLocation } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import Home from './component/Home.jsx';
 import Footer from './component/Footer.jsx';
@@ -11,23 +11,13 @@ import StudentLogin from './component/StudentLogin.jsx';
 import StudentRegister from './component/StudentRegister.jsx';
 import Profile from './component/Profile.jsx';
 import ChatBot from './component/ChatBot.jsx'
-import TeacherLogin from './component/TeacherLogin.jsx';
-import TeacherRegister from './component/TeacherRegister.jsx';
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const location = useLocation(); 
 
    useEffect(() => {
   const fetchUser = async () => {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-  if (sessionError) {
-    console.error("Error fetching session:", sessionError);
-    setUser(null);
-    return;
-  }
-
-  if (sessionData.session) {
     const { data, error } = await supabase.auth.getUser();
     if (error) {
       console.error("Error fetching user:", error);
@@ -35,11 +25,7 @@ const App = () => {
     } else {
       setUser(data?.user || null);
     }
-  } else {
-    setUser(null);
-  }
-};
-
+  };
 
   fetchUser();
 
@@ -67,11 +53,9 @@ const App = () => {
         <Route path="/student-register" element={<StudentRegister />} />
         <Route path= "/profile" element={<Profile />} />
         <Route path= "/chatbot" element = {<ChatBot />} />
-        <Route path= "/teacher-login" element={ <TeacherLogin setUser={setUser} /> } />
-        <Route path= "/teacher-register" element={ <TeacherRegister /> } />
-
       </Routes>
-      <Footer />
+    {/*changes to hide footer  */}
+     {location.pathname!=="/chatbot" &&  <Footer />} 
     </div>
   );
 };
