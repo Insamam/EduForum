@@ -99,7 +99,7 @@ const TeacherRegister = () => {
 
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto overflow-y-auto">
       <div className="text-center mb-8">
         <BookOpen className="h-12 w-12 text-indigo-600 mx-auto" />
         <h1 className="text-3xl font-bold">Join EduForum</h1>

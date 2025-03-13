@@ -84,7 +84,7 @@ const StudentLogin = ({ setUser }) => {
           </div>
         </form>
         <div className="text-center">
-          <p className="text-gray-600">Don't have an account? <Link to="/student-register" className="text-indigo-600 font-semibold">Sign up</Link></p>
+          <p className="text-gray-600">Don't have an account? <Link to="/Auth/student-register" className="text-indigo-600 font-semibold">Sign up</Link></p>
         </div>
       </div>
     </div>

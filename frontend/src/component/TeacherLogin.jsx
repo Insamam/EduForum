@@ -99,7 +99,7 @@ const TeacherLogin = ({ setUser }) => {
         <div className="text-center">
           <p className="text-gray-600">
             Don't have an account?{" "}
-            <Link to="/teacher-register" className="text-indigo-600 font-semibold">
+            <Link to="/Auth/teacher-register" className="text-indigo-600 font-semibold">
               Sign up
             </Link>
           </p>
