@@ -76,7 +76,7 @@ const NavBar = ({ user, setUser }) => {
                 
               </>
             ) : (
-              <Link to="/student-login" className="flex items-center space-x-1 hover:text-indigo-200">
+              <Link to="auth/student-login" className="flex items-center space-x-1 hover:text-indigo-200">
                 <LogIn className="h-5 w-5" />
                 <span>Login</span>
               </Link>
