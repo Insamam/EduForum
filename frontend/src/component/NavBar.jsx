@@ -65,6 +65,14 @@ const NavBar = ({ user, setUser }) => {
 >
   Questions
 </Link>
+<Link
+  to="/chatbot"
+  className="relative text-white font-semibold hover:text-indigo-200 transition duration-300 ease-in-out 
+             after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] 
+             after:bg-white after:transition-all after:duration-300 after:ease-in-out hover:after:w-full"
+>
+  Chat with AI
+</Link>
 
 
             {user ? (

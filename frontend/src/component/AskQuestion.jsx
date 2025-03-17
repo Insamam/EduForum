@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Info } from "lucide-react";
 import { supabase } from '../supabaseClient';
@@ -16,12 +16,32 @@ const AskQuestion = () => {
   const [grade, setGrade] = useState("");
   const [tags, setTags] = useState("");
   const [errors, setErrors] = useState({});
+  const [user, setUser] = useState(null); // Add user state
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error("Error fetching session:", error);
+        setUser(null);
+      }
+    };
+    fetchUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
     if (!title.trim()) newErrors.title = "Title is required";
     else if (title.length < 15) newErrors.title = "Title should be at least 15 characters";
-    
+
     if (!details.trim()) newErrors.details = "Question details are required";
     else if (details.length < 30) newErrors.details = "Please provide more details (at least 30 characters)";
 
@@ -32,87 +52,49 @@ const AskQuestion = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const formattedTags = tags.split(",").map(tag => tag.trim()); 
+    if (!user) {
+      alert("Please log in to ask a question.");
+      return;
+    }
 
-  const { data, error } = await supabase.from("questions").insert([
-    {
-      user_id: "4192de44-3d66-40af-96a3-a5abee48d177", // Using the test user ID
-      title,
-      details,
-      subject,
-      grade,
-      tags: formattedTags,
-    },
-  ]);
+    if (!validateForm()) return;
 
-  if (error) {
-    console.error("Error inserting question:", error);
-  } else {
-    alert("Question added successfully");
-  }
+    const formattedTags = tags.split(",").map(tag => tag.trim());
 
-  setTitle("")
-  setDetails("")
-  setSubject("")
-  setGrade("")
-  setTags("")
-  setErrors({})
-};
+    try {
+      const { data, error } = await supabase.from("questions").insert([
+        {
+          user_id: user.id, // Use the logged-in user's ID
+          title,
+          details,
+          subject,
+          grade,
+          tags: formattedTags,
+        },
+      ]);
 
+      if (error) {
+        console.error("Error inserting question:", error);
+        alert("Error submitting question. Please try again.");
+      } else {
+        alert("Question added successfully");
+        navigate("/questions");
+      }
+    } catch (error) {
+      console.error("An unexpected error occurred:", error);
+      alert("An unexpected error occurred. Please try again later.");
+    }
 
-
-
-
-
-
-
-
-
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   if (!validateForm()) return;
-
-  //const formattedTags = tags.split(",").map(tag => tag.trim()); 
-
-  //   const user = supabase.auth.user(); // Get the logged-in user
-  //   if (!user) {
-  //     alert("You need to be logged in to ask a question.");
-  //     return;
-  //   }
-
-  //   const { data, error } = await supabase.from("questions").insert([
-  //     {
-  //       id: crypto.randomUUID(), 
-  //       user_id: user.id,
-  //       title,
-  //       details,
-  //       subject,
-  //       grade,
-  //       tags: formattedTags,
-  //       created_at: new Date(),
-  //     },
-  //   ]);
-
-  
-  // if (error) {
-  //   console.error("Error inserting question:", error);
-  // } else {
-  //   alert("Question added successfully");
-  //    navigate("/questions");
-  // }
-
-  // setTitle("")
-  // setDetails("")
-  // setSubject("")
-  // setGrade("")
-  // setTags("")
-  // setErrors({})
-  // };
+    setTitle("");
+    setDetails("");
+    setSubject("");
+    setGrade("");
+    setTags("");
+    setErrors({});
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -217,6 +199,3 @@ const AskQuestion = () => {
 };
 
 export default AskQuestion;
-
-
-
