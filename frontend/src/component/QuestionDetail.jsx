@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { ThumbsUp, ThumbsDown, MessageCircle } from "lucide-react";
+import {
+  ThumbsUp,
+  ThumbsDown,
+  MessageCircle,
+  User,
+  Calendar,
+  Edit,
+  Send,
+} from "lucide-react";
 
 const QuestionDetail = () => {
   const { id } = useParams();
@@ -54,25 +62,87 @@ const QuestionDetail = () => {
     fetchAnswers();
   }, [id]);
 
-  // ✅ Function to handle likes & dislikes
+  // ✅ Function to handle question likes
+  const handleQuestionLike = async () => {
+    if (!user) return alert("Please log in to like the question.");
+
+    // Check if the user already liked the question
+    const { data: existingVote, error: fetchError } = await supabase
+      .from("question_votes")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("question_id", id)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Fetch Vote Error:", fetchError);
+      return;
+    }
+
+    if (existingVote) {
+      // Unlike the question (remove vote)
+      const { error } = await supabase
+        .from("question_votes")
+        .delete()
+        .eq("id", existingVote.id);
+
+      if (error) console.error("Unlike Question Error:", error);
+    } else {
+      // Like the question (insert vote)
+      const { error } = await supabase
+        .from("question_votes")
+        .insert([{ user_id: user.id, question_id: id }]);
+
+      if (error) console.error("Like Question Error:", error);
+    }
+
+    // Refresh like count
+    await updateQuestionLikes();
+  };
+
+  // ✅ Function to update question's like count
+  const updateQuestionLikes = async () => {
+    const { data, error } = await supabase
+      .from("question_votes")
+      .select("id")
+      .eq("question_id", id);
+
+    if (error) {
+      console.error("Error fetching likes:", error);
+      return;
+    }
+
+    const likeCount = data.length;
+
+    // Update question's like count in database
+    const { error: updateError } = await supabase
+      .from("questions")
+      .update({ like_count: likeCount })
+      .eq("id", id);
+
+    if (updateError) console.error("Update Question Likes Error:", updateError);
+
+    // Refresh UI
+    setQuestion((prev) => prev ? { ...prev, like_count: likeCount } : prev);
+  };
+
+  // ✅ Function to handle likes & dislikes on answers
   const handleVote = async (answerId, voteType) => {
     if (!user) return alert("Please log in to vote.");
 
     // Fetch existing vote
     const { data: existingVotes, error: fetchError } = await supabase
-  .from("answer_votes")
-  .select("id, vote_type")
-  .eq("user_id", user.id)
-  .eq("answer_id", answerId);
+      .from("answer_votes")
+      .select("id, vote_type")
+      .eq("user_id", user.id)
+      .eq("answer_id", answerId);
 
-if (fetchError) {
-  console.error("Fetch Vote Error:", fetchError);
-  return;
-}
+    if (fetchError) {
+      console.error("Fetch Vote Error:", fetchError);
+      return;
+    }
 
-// Check if any vote exists (since .single() causes issues when no rows are found)
-const existingVote = existingVotes?.length > 0 ? existingVotes[0] : null;
-
+    const existingVote = existingVotes?.length > 0 ? existingVotes[0] : null;
 
     if (existingVote) {
       if (existingVote.vote_type === voteType) {
@@ -119,14 +189,12 @@ const existingVote = existingVotes?.length > 0 ? existingVotes[0] : null;
     const dislikeCount = data.filter(vote => vote.vote_type === -1).length;
 
     // Update the answer in the database
-    const { error: updateError } = await supabase
+    await supabase
       .from("answers")
       .update({ like_count: likeCount, dislike_count: dislikeCount })
       .eq("id", answerId);
 
-    if (updateError) console.error("Update Answer Votes Error:", updateError);
-
-    // Refresh UI with updated counts
+    // Refresh UI
     const { data: updatedAnswers } = await supabase
       .from("answers")
       .select("*, users(full_name)")
@@ -136,92 +204,78 @@ const existingVote = existingVotes?.length > 0 ? existingVotes[0] : null;
     if (updatedAnswers) setAnswers(updatedAnswers);
   };
 
-  const handleSubmitAnswer = async (e) => {
-    e.preventDefault();
-    if (!answerText.trim()) return;
-    if (!user) return alert("Please log in to answer");
-
-    const { data, error } = await supabase
-      .from("answers")
-      .insert([{ question_id: id, answer_text: answerText, user_id: user.id }])
-      .select("*, users(full_name)");
-
-    if (error) {
-      console.error("Submit Answer Error:", error);
-      return;
-    }
-
-    if (data) {
-      setAnswers([data[0], ...answers]);
-      setAnswerText("");
-      setShowAnswerForm(false);
-    }
-  };
-
   if (loading) return <p>Loading...</p>;
   if (!question) return <p>Question not found.</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <h1 className="text-2xl font-bold">{question.title}</h1>
-      <p className="text-gray-600 my-4">{question.details}</p>
-      <div className="text-sm text-gray-500">Asked by {question.users?.full_name}</div>
+    <div className="max-w-3xl mx-auto p-8 bg-white rounded-2xl shadow-xl transition-all duration-300 ease-in-out">
+      {/* Question Details */}
+      <div className="mb-10 border-b pb-6">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-4 flex items-center gap-3">
+          <Edit className="text-blue-600" size={28} /> {question.title}
+        </h1>
+        <p className="text-lg text-gray-700 leading-relaxed mb-6">{question.details}</p>
+        <div className="flex items-center text-sm text-gray-600 mb-3">
+          <User className="mr-2" size={18} /> {question.users?.full_name}
+        </div>
+        <div className="flex items-center text-sm text-gray-600 mb-4">
+          <Calendar className="mr-2" size={18} /> Asked on: {new Date(question.created_at).toLocaleDateString()}
+        </div>
+        <div className="flex items-center">
+          <button onClick={handleQuestionLike} className="flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200">
+            <ThumbsUp className="mr-2" size={22} /> Like
+          </button>
+          <span className="ml-2 text-gray-700">{question.like_count || 0}</span>
+        </div>
+      </div>
 
-      <div className="mt-6">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <MessageCircle size={24} /> Answers
+      {/* Answers Section */}
+      <div>
+        <h2 className="text-3xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
+          <MessageCircle className="text-indigo-600" size={26} /> Answers
         </h2>
-
         {answers.map((answer) => (
-          <div key={answer.id} className="bg-gray-50 p-4 mt-4 rounded-lg flex justify-between">
-            <div>
-              <p className="text-gray-800">{answer.answer_text}</p>
-              <div className="text-sm text-gray-500 mt-1">Answered by {answer.users?.full_name}</div>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <button
-                onClick={() => handleVote(answer.id, 1)}
-                className="text-green-500 hover:text-green-700 transition-all"
-                title="Like"
-              >
-                <ThumbsUp size={22} />
-              </button>
-              <span className="text-gray-700">{answer.like_count || 0}</span>
-
-              <button
-                onClick={() => handleVote(answer.id, -1)}
-                className="text-red-500 hover:text-red-700 transition-all mt-2"
-                title="Dislike"
-              >
-                <ThumbsDown size={22} />
-              </button>
-              <span className="text-gray-700">{answer.dislike_count || 0}</span>
+          <div key={answer.id} className="p-6 bg-gray-50 rounded-xl mb-6 border border-gray-200 transition-shadow duration-300 hover:shadow-md">
+            <p className="text-gray-800 leading-relaxed mb-4">{answer.answer_text}</p>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600 flex items-center">
+                <User className="mr-2" size={18} /> {answer.users?.full_name}
+              </div>
+              <div className="flex items-center space-x-3">
+                <button onClick={() => handleVote(answer.id, 1)} className="text-green-600 hover:text-green-800 transition-colors duration-200">
+                  <ThumbsUp size={22} />
+                </button>
+                <span className="text-gray-700">{answer.like_count || 0}</span>
+                <button onClick={() => handleVote(answer.id, -1)} className="text-red-600 hover:text-red-800 transition-colors duration-200">
+                  <ThumbsDown size={22} />
+                </button>
+                <span className="text-gray-700">{answer.dislike_count || 0}</span>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {!showAnswerForm ? (
-        <button
-          onClick={() => setShowAnswerForm(true)}
-          className="mt-6 bg-indigo-600 text-white px-4 py-2 rounded shadow-lg hover:bg-indigo-700 transition"
-        >
-          Write an Answer
-        </button>
-      ) : (
-        <form onSubmit={handleSubmitAnswer} className="mt-6">
-          <textarea
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-indigo-200"
-            value={answerText}
-            onChange={(e) => setAnswerText(e.target.value)}
-            required
-          />
-          <button type="submit" className="mt-2 bg-green-600 text-white px-4 py-2 rounded shadow-lg hover:bg-green-700 transition">
-            Submit
+      {/* Answer Form */}
+      <div className="mt-10">
+        {!showAnswerForm ? (
+          <button onClick={() => setShowAnswerForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center gap-3">
+            <Edit size={20} /> Write an Answer
           </button>
-        </form>
-      )}
+        ) : (
+          <form className="mt-6">
+            <textarea
+              className="w-full p-4 border rounded-xl mb-4 focus:ring-2 focus:ring-indigo-200 transition-shadow duration-300"
+              placeholder="Your answer..."
+              value={answerText}
+              onChange={(e) => setAnswerText(e.target.value)}
+            />
+            <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center gap-3">
+              <Send size={20} /> Submit Answer
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 };
