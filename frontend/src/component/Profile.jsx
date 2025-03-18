@@ -76,7 +76,7 @@ const Profile = () => {
   // Logout Function
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/student-login");
+    navigate("/");
   };
 
   if (loading) return <div className="text-center mt-10">Loading...</div>;
