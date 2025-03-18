@@ -43,17 +43,58 @@ const Questions = () => {
   //   }
   // };
 const fetchQuestions = async () => {
-  const { data, error } = await supabase
-    .from("questions")
-    .select(`id, title, details, subject, grade, tags, votes, answers_count, author, created_at`)
-    .order("created_at", { ascending: false });
+  try {
+    // Fetch questions from "questions" table
+    const { data: questionsData, error: questionsError } = await supabase
+      .from("questions")
+      .select("id, title, details, subject, grade, tags, author, created_at")
+      .order("created_at", { ascending: false });
 
-  if (error) {
+    if (questionsError) throw questionsError;
+
+    // Fetch total likes (votes) per question
+    const { data: votesData, error: votesError } = await supabase
+      .from("question_votes")
+      .select("question_id");
+
+    if (votesError) throw votesError;
+
+    // Count the number of votes (likes) per question
+    const votesMap = {};
+    votesData.forEach(({ question_id }) => {
+      if (!votesMap[question_id]) votesMap[question_id] = 0;
+      votesMap[question_id] += 1;
+    });
+
+    // Fetch total answers count per question
+    const { data: answersData, error: answersError } = await supabase
+      .from("answers")
+      .select("question_id");
+
+    if (answersError) throw answersError;
+
+    // Count the number of answers per question
+    const answersMap = {};
+    answersData.forEach(({ question_id }) => {
+      if (!answersMap[question_id]) answersMap[question_id] = 0;
+      answersMap[question_id] += 1;
+    });
+
+    // Merge likes and answers count into questions data
+    const updatedQuestions = questionsData.map((q) => ({
+      ...q,
+      votes: votesMap[q.id] || 0, // Get votes from votesMap (default 0)
+      answers_count: answersMap[q.id] || 0, // Get answers count (default 0)
+    }));
+
+    setQuestions(updatedQuestions);
+  } catch (error) {
     console.error("Error fetching questions:", error);
-  } else {
-    setQuestions(data);
   }
 };
+
+
+
 
 
   // Filter questions based on search, subject, and grade
@@ -176,13 +217,8 @@ const fetchQuestions = async () => {
     <span>{question.answers_count} answers</span>
   </div>
 
-  {/* Answered By (Author) */}
-  {question.answers_count > 0 && (
-    <div className="flex items-center text-gray-700">
-      <span className="ml-2">Answered by:</span>
-      <span className="ml-1 font-semibold text-indigo-800">{question.author}</span>
-    </div>
-  )}
+ 
+  
 </div>
 
           </Link>
