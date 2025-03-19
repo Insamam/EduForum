@@ -1,17 +1,62 @@
 import {
-    BookOpen,
-    Brain,
-    Clock,
-    GraduationCap,
-    Heart,
-    MessageSquare,
-    Share2,
-    Sparkles,
-    ThumbsUp
+  BookOpen,
+  Brain,
+  Clock,
+  GraduationCap,
+  Heart,
+  MessageSquare,
+  Share2,
+  Sparkles,
+  ThumbsUp,
 } from 'lucide-react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
-function Dashboard(){
+function Dashboard() {
+  const [userName, setUserName] = useState('User');
+  const [userClassStream, setUserClassStream] = useState('Class ');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      console.log('User from getSession:', user); // Debugging
+
+      if (user) {
+        console.log('User ID:', user.id); // Debugging
+        // Join with 'students' table to get grade
+        const { data, error } = await supabase
+          .from('users')
+          .select(`
+            full_name,
+            students(grade)
+          `)
+          .eq('id', user.id)
+          .single();
+
+        console.log('Supabase data:', data); // Debugging
+        console.log('Supabase error:', error); // Debugging
+
+        if (error) {
+          console.error('Error fetching user data:', error);
+        } else if (data) {
+          setUserName(data.full_name);
+          setUserClassStream(data.students?.grade || 'No Class');
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchUserData();
+  }, []);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
       {/* Header Section */}
@@ -28,13 +73,6 @@ function Dashboard(){
               <p className="text-gray-600">Your Learning Journey</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <img 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop" 
-              alt="Profile" 
-              className="w-12 h-12 rounded-full border-2 border-blue-600"
-            />
-          </div>
         </div>
 
         {/* Profile Section */}
@@ -43,77 +81,81 @@ function Dashboard(){
           <div className="relative">
             <div className="flex items-center mb-4">
               <GraduationCap className="h-6 w-6 text-blue-600 mr-2" />
-              <h2 className="text-2xl font-bold text-gray-900">Welcome back, Sarah!</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Welcome back, {userName}!
+              </h2>
             </div>
             <div className="flex items-center">
               <Brain className="h-5 w-5 text-indigo-600 mr-2" />
-              <p className="text-indigo-600 font-medium">Class 10 • Science Stream</p>
+              <p className="text-indigo-600 font-medium">
+                {userClassStream}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard icon={MessageSquare} title="Questions Asked" value="24" color="blue" />
-          <StatCard icon={Heart} title="Posts Liked" value="56" color="red" />
-          <StatCard icon={Clock} title="Saved for Later" value="8" color="purple" />
+                {/* Stats Grid and other parts of the dashboard remain the same */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <StatCard icon={MessageSquare} title="Questions Asked" value="24" color="blue" />
+                    <StatCard icon={Heart} title="Posts Liked" value="56" color="red" />
+                    <StatCard icon={Clock} title="Saved for Later" value="8" color="purple" />
+                </div>
+
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Your Posts */}
+                    <div className="lg:col-span-2 space-y-8">
+                        <div className="bg-white rounded-2xl shadow-lg p-8">
+                            <div className="flex items-center mb-6">
+                                <MessageSquare className="h-6 w-6 text-blue-600 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">Your Posts</h2>
+                            </div>
+                            <PostsList posts={yourPosts} />
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow-lg p-8">
+                            <div className="flex items-center mb-6">
+                                <Heart className="h-6 w-6 text-red-500 mr-2" />
+                                <h2 className="text-xl font-bold text-gray-900">Posts You Liked</h2>
+                            </div>
+                            <PostsList posts={likedPosts} />
+                        </div>
+                    </div>
+
+                    {/* Progress & Achievements */}
+                    <div className="space-y-8">
+                        <div className="bg-white rounded-2xl shadow-lg p-8">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">Subject Progress</h2>
+                            <div className="space-y-6">
+                                <ProgressBar subject="Mathematics" progress={85} color="blue" />
+                                <ProgressBar subject="Physics" progress={72} color="purple" />
+                                <ProgressBar subject="Chemistry" progress={68} color="green" />
+                                <ProgressBar subject="Biology" progress={91} color="indigo" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow-lg p-8">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Achievements</h2>
+                            <div className="space-y-4">
+                                <Achievement
+                                    title="Quick Thinker"
+                                    description="Asked 5 insightful questions in one day"
+                                />
+                                <Achievement
+                                    title="Math Wizard"
+                                    description="Most liked answer in Mathematics"
+                                />
+                                <Achievement
+                                    title="Helper"
+                                    description="Helped 50 students with their doubts"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Your Posts */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <div className="flex items-center mb-6">
-                <MessageSquare className="h-6 w-6 text-blue-600 mr-2" />
-                <h2 className="text-xl font-bold text-gray-900">Your Posts</h2>
-              </div>
-              <PostsList posts={yourPosts} />
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <div className="flex items-center mb-6">
-                <Heart className="h-6 w-6 text-red-500 mr-2" />
-                <h2 className="text-xl font-bold text-gray-900">Posts You Liked</h2>
-              </div>
-              <PostsList posts={likedPosts} />
-            </div>
-          </div>
-
-          {/* Progress & Achievements */}
-          <div className="space-y-8">
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Subject Progress</h2>
-              <div className="space-y-6">
-                <ProgressBar subject="Mathematics" progress={85} color="blue" />
-                <ProgressBar subject="Physics" progress={72} color="purple" />
-                <ProgressBar subject="Chemistry" progress={68} color="green" />
-                <ProgressBar subject="Biology" progress={91} color="indigo" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Achievements</h2>
-              <div className="space-y-4">
-                <Achievement 
-                  title="Quick Thinker" 
-                  description="Asked 5 insightful questions in one day" 
-                />
-                <Achievement 
-                  title="Math Wizard" 
-                  description="Most liked answer in Mathematics" 
-                />
-                <Achievement 
-                  title="Helper" 
-                  description="Helped 50 students with their doubts" 
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 const yourPosts = [
