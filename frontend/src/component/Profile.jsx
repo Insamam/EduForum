@@ -14,12 +14,12 @@ const Profile = () => {
       
       if (sessionError || !userSession.session) {
         console.error("Error fetching session:", sessionError);
-        navigate("/student-login");
+        navigate("/Auth/student-login");
         return;
       }
 
       const userId = userSession.session.user.id;
-      console.log("Logged-in User ID:", userId); // Debugging log
+      // console.log("Logged-in User ID:", userId); // Debugging log
 
       // Fetch user details from 'users' table
       const { data: userData, error: userError } = await supabase
@@ -76,7 +76,7 @@ const Profile = () => {
   // Logout Function
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/student-login");
+    navigate("/Auth/student-login");
   };
 
   if (loading) return <div className="text-center mt-10">Loading...</div>;

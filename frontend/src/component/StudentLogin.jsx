@@ -11,6 +11,7 @@ const StudentLogin = ({ setUser }) => {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
+    const userType = 'student';
     e.preventDefault();
     setError('');
 
@@ -25,11 +26,35 @@ const StudentLogin = ({ setUser }) => {
     });
 
     if (error) {
-      setError(error.message);
-    } else {
+      setError(`Error signing in : ${error.message}`);
+    }
+
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", data.user.id)
+      .maybeSingle(); // Prevents "multiple (or no) rows returned" error
+
+    if (userError) {
+      setError(`Error fetching user : ${userError}`);
+      return;
+    }
+
+    else if (!userData) {
+      setError("User not found in users table!");
+      return;
+    }
+
+    else if (userData.role != userType) {
+      await supabase.auth.signOut();
+      setError("Login with a student ID !");
+    }
+
+    else {
       setUser(data.user); // Store logged-in user
       navigate('/');
     }
+
   };
 
   return (
