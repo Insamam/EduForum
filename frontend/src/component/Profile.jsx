@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { FaUserCircle } from "react-icons/fa";
+import { MdEmail, MdSchool, MdLogout } from "react-icons/md";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -11,7 +13,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUser = async () => {
       const { data: userSession, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !userSession.session) {
         console.error("Error fetching session:", sessionError);
         navigate("/student-login");
@@ -19,22 +21,16 @@ const Profile = () => {
       }
 
       const userId = userSession.session.user.id;
-      console.log("Logged-in User ID:", userId); // Debugging log
 
       // Fetch user details from 'users' table
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
         .eq("id", userId)
-        .maybeSingle(); // Prevents "multiple (or no) rows returned" error
+        .maybeSingle();
 
-      if (userError) {
+      if (userError || !userData) {
         console.error("Error fetching user:", userError);
-        return;
-      }
-
-      if (!userData) {
-        console.error("User not found in users table!");
         return;
       }
 
@@ -48,11 +44,7 @@ const Profile = () => {
           .eq("user_id", userId)
           .single();
 
-        if (studentError) {
-          console.error("Error fetching student data:", studentError);
-        } else {
-          setProfileData(studentData);
-        }
+        if (!studentError) setProfileData(studentData);
       } else if (userData.role === "teacher") {
         const { data: teacherData, error: teacherError } = await supabase
           .from("teachers")
@@ -60,11 +52,7 @@ const Profile = () => {
           .eq("user_id", userId)
           .single();
 
-        if (teacherError) {
-          console.error("Error fetching teacher data:", teacherError);
-        } else {
-          setProfileData(teacherData);
-        }
+        if (!teacherError) setProfileData(teacherData);
       }
 
       setLoading(false);
@@ -79,39 +67,63 @@ const Profile = () => {
     navigate("/");
   };
 
-  if (loading) return <div className="text-center mt-10">Loading...</div>;
+  if (loading) return <div className="text-center mt-10 text-gray-600">Loading...</div>;
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-2xl font-bold text-center mb-6">Profile</h2>
-
-      {user && (
-        <div className="space-y-4">
-          <p><strong>Full Name:</strong> {user.full_name}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Role:</strong> {user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
-
-          {profileData && (
-            <>
-              {user.role === "student" ? (
-                <>
-                  <p><strong>Grade:</strong> {profileData.grade}</p>
-                  <p><strong>School:</strong> {profileData.school_name}</p>
-                </>
-              ) : (
-                <p><strong>School:</strong> {profileData.school_name}</p>
-              )}
-            </>
-          )}
+    <div className="min-h-screen flex items-center justify-center bg-blue-100">
+      <div className="max-w-lg w-full bg-white shadow-lg rounded-xl border border-gray-200 p-8 transition-all hover:shadow-xl">
+        <div className="flex flex-col items-center">
+          <FaUserCircle className="text-gray-600 text-6xl mb-4 transition-transform duration-300 hover:scale-105" />
+          <h2 className="text-2xl font-semibold text-gray-800">Profile</h2>
         </div>
-      )}
 
-      <button 
-        onClick={handleLogout} 
-        className="mt-6 w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700"
-      >
-        Logout
-      </button>
+        {user && (
+          <div className="mt-6 space-y-4 text-gray-700">
+            <div className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md transition">
+              <FaUserCircle className="text-gray-500 text-lg" />
+              <p className="font-medium">{user.full_name}</p>
+            </div>
+            <div className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md transition">
+              <MdEmail className="text-gray-500 text-lg" />
+              <p>{user.email}</p>
+            </div>
+            <div className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md transition">
+              <MdSchool className="text-gray-500 text-lg" />
+              <p className="capitalize">{user.role}</p>
+            </div>
+
+            {profileData && (
+              <>
+                {user.role === "student" ? (
+                  <>
+                    <div className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md transition">
+                      <MdSchool className="text-gray-500 text-lg" />
+                      <p>Grade: {profileData.grade}</p>
+                    </div>
+                    <div className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md transition">
+                      <MdSchool className="text-gray-500 text-lg" />
+                      <p>School: {profileData.school_name}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-md transition">
+                    <MdSchool className="text-gray-500 text-lg" />
+                    <p>School: {profileData.school_name}</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={handleLogout}
+          className="mt-6 w-full bg-red-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-red-700 transition-all hover:shadow-md"
+        >
+          <MdLogout className="text-lg" />
+          Logout
+        </button>
+      </div>
     </div>
   );
 };
