@@ -203,6 +203,37 @@ const QuestionDetail = () => {
 
     if (updatedAnswers) setAnswers(updatedAnswers);
   };
+  // ✅ Function to handle answer submission
+const handleSubmitAnswer = async (e) => {
+  e.preventDefault();
+  if (!user) return alert("Please log in to submit an answer.");
+  if (!answerText.trim()) return alert("Answer cannot be empty.");
+
+  const { data, error } = await supabase
+    .from("answers")
+    .insert([{ 
+      answer_text: answerText, 
+      question_id: id, 
+      user_id: user.id 
+    }]);
+
+  if (error) {
+    console.error("Error submitting answer:", error);
+    return;
+  }
+
+  setAnswerText("");  // Clear textarea
+  setShowAnswerForm(false);  // Hide form
+  // Refresh answers
+  const { data: updatedAnswers } = await supabase
+      .from("answers")
+      .select("*, users(full_name)")
+      .eq("question_id", id)
+      .order("like_count", { ascending: false });
+
+    if (updatedAnswers) setAnswers(updatedAnswers);
+};
+
 
   if (loading) return <p>Loading...</p>;
   if (!question) return <p>Question not found.</p>;
@@ -263,17 +294,18 @@ const QuestionDetail = () => {
             <Edit size={20} /> Write an Answer
           </button>
         ) : (
-          <form className="mt-6">
-            <textarea
-              className="w-full p-4 border rounded-xl mb-4 focus:ring-2 focus:ring-indigo-200 transition-shadow duration-300"
-              placeholder="Your answer..."
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-            />
-            <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center gap-3">
-              <Send size={20} /> Submit Answer
-            </button>
-          </form>
+          <form className="mt-6" onSubmit={handleSubmitAnswer}>
+  <textarea
+    className="w-full p-4 border rounded-xl mb-4 focus:ring-2 focus:ring-indigo-200 transition-shadow duration-300"
+    placeholder="Your answer..."
+    value={answerText}
+    onChange={(e) => setAnswerText(e.target.value)}
+  />
+  <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center gap-3">
+    <Send size={20} /> Submit Answer
+  </button>
+</form>
+
         )}
       </div>
     </div>
