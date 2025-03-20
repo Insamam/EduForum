@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Info } from "lucide-react";
 import { supabase } from '../supabaseClient';
+import moderateQuestion from "./moderateQuestion";
 
 const subjects = [
   "Mathematics", "Science", "English", "History", "Geography",
@@ -16,7 +17,7 @@ const AskQuestion = () => {
   const [grade, setGrade] = useState("");
   const [tags, setTags] = useState("");
   const [errors, setErrors] = useState({});
-  const [user, setUser] = useState(null); // Add user state
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -30,11 +31,11 @@ const AskQuestion = () => {
     };
     fetchUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe?.();
   }, []);
 
   const validateForm = () => {
@@ -62,12 +63,23 @@ const AskQuestion = () => {
 
     if (!validateForm()) return;
 
+    // Ensure `user_metadata` exists
+    const userRole = user?.user_metadata?.role || "student"; // Default to student if missing
+
+    if (userRole === "student") {
+        const isValid = await moderateQuestion(`${title} ${details}`);
+        if (!isValid) {
+            setErrors({ title: "Your question was rejected due to spam/inappropriate content." });
+            return;
+        }
+    }
+
     const formattedTags = tags.split(",").map(tag => tag.trim());
 
     try {
-      const { data, error } = await supabase.from("questions").insert([
+      const { error } = await supabase.from("questions").insert([
         {
-          user_id: user.id, // Use the logged-in user's ID
+          user_id: user.id,
           title,
           details,
           subject,
@@ -114,7 +126,6 @@ const AskQuestion = () => {
 
       <div className="bg-white rounded-lg shadow-md p-6">
         <form onSubmit={handleSubmit}>
-          {/* Title Input */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">Question Title</label>
             <input
@@ -127,7 +138,6 @@ const AskQuestion = () => {
             {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
           </div>
 
-          {/* Details Input */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">Question Details</label>
             <textarea
@@ -140,7 +150,6 @@ const AskQuestion = () => {
             {errors.details && <p className="mt-1 text-sm text-red-600">{errors.details}</p>}
           </div>
 
-          {/* Subject & Grade */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
@@ -173,7 +182,6 @@ const AskQuestion = () => {
             </div>
           </div>
 
-          {/* Tags Input */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
             <input
@@ -186,7 +194,6 @@ const AskQuestion = () => {
             <p className="mt-1 text-sm text-gray-500">Add up to 5 tags to describe your question</p>
           </div>
 
-          {/* Submit Button */}
           <div className="flex justify-end">
             <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-md font-semibold">
               Post Your Question
