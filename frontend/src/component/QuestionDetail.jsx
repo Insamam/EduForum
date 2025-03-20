@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
   Save,
+  CheckCircle,
 } from "lucide-react";
 
 const QuestionDetail = () => {
@@ -23,6 +24,7 @@ const QuestionDetail = () => {
   const [showAnswerForm, setShowAnswerForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [isTeacher, setIsTeacher] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDetails, setEditedDetails] = useState("");
@@ -31,6 +33,17 @@ const QuestionDetail = () => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+
+      // Check if user is a teacher
+      if (session?.user) {
+        const { data: teacherData } = await supabase
+          .from('teachers')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        setIsTeacher(!!teacherData);
+      }
     };
     fetchUser();
 
@@ -198,6 +211,25 @@ const QuestionDetail = () => {
     if (updatedAnswers) setAnswers(updatedAnswers);
   };
 
+  const handleVerifyAnswer = async (answerId) => {
+    if (!isTeacher) return;
+
+    const { error } = await supabase
+      .from('answers')
+      .update({ is_verified: true })
+      .eq('id', answerId);
+
+    if (error) {
+      console.error('Error verifying answer:', error);
+      return;
+    }
+
+    // Update answers list to reflect verification
+    setAnswers(answers.map(answer => 
+      answer.id === answerId ? { ...answer, is_verified: true } : answer
+    ));
+  };
+
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
     if (!user) return alert("Please log in to submit an answer.");
@@ -208,7 +240,8 @@ const QuestionDetail = () => {
       .insert([{ 
         answer_text: answerText, 
         question_id: id, 
-        user_id: user.id 
+        user_id: user.id,
+        is_verified: false
       }]);
 
     if (error) {
@@ -228,7 +261,6 @@ const QuestionDetail = () => {
     if (updatedAnswers) setAnswers(updatedAnswers);
   };
 
-  // New function to handle question editing
   const handleEditQuestion = async () => {
     if (!user) return alert("Please log in to edit the question.");
     if (user.id !== question.user_id) return alert("You can only edit your own questions.");
@@ -260,7 +292,6 @@ const QuestionDetail = () => {
     setIsEditing(false);
   };
 
-  // New function to handle question deletion
   const handleDeleteQuestion = async () => {
     if (!user) return alert("Please log in to delete the question.");
     if (user.id !== question.user_id) return alert("You can only delete your own questions.");
@@ -279,7 +310,7 @@ const QuestionDetail = () => {
       return alert("Failed to delete question.");
     }
 
-    navigate("/"); // Redirect to home page after deletion
+    navigate("/");
   };
 
   if (loading) return <p>Loading...</p>;
@@ -368,12 +399,28 @@ const QuestionDetail = () => {
         </h2>
         {answers.map((answer) => (
           <div key={answer.id} className="p-6 bg-gray-50 rounded-xl mb-6 border border-gray-200 transition-shadow duration-300 hover:shadow-md">
-            <p className="text-gray-800 leading-relaxed mb-4">{answer.answer_text}</p>
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-gray-800 leading-relaxed">{answer.answer_text}</p>
+              {answer.is_verified && (
+                <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                  <CheckCircle size={16} />
+                  <span className="text-sm font-medium">Verified Teacher</span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600 flex items-center">
                 <User className="mr-2" size={18} /> {answer.users?.full_name}
               </div>
               <div className="flex items-center space-x-3">
+                {isTeacher && !answer.is_verified && (
+                  <button
+                    onClick={() => handleVerifyAnswer(answer.id)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <CheckCircle size={16} /> Verify
+                  </button>
+                )}
                 <button onClick={() => handleVote(answer.id, 1)} className="text-green-600 hover:text-green-800 transition-colors duration-200">
                   <ThumbsUp size={22} />
                 </button>
