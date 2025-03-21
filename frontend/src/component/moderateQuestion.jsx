@@ -1,15 +1,24 @@
 import axios from "axios";
-
 const moderateQuestion = async (question) => {
     try {
-        console.log("Moderating question:", question); // Debug input
+        console.log("Moderating question:", question);
 
         const response = await axios.post(
             "https://models.aixplain.com/api/v1/chat/completions",
             {
                 model: "6646261c6eb563165658bbb1",
                 messages: [
-                    { role: "system", content: "Analyze this question. Reply 'valid' if it's a properly structured academic question. Otherwise, reply 'invalid'." },
+                    { 
+                        role: "system", 
+                        content: `Analyze the question and classify it into one of these:
+                        1. 'valid' - A properly structured academic question, even if it's simple.
+                        2. 'valid-simple' - A short or easy academic question, but still valid.
+                        3. 'unclear' - The question lacks clarity or makes no sense.
+                        4. 'off-topic' - Not related to academic topics.
+                        5. 'spam' - Contains inappropriate content or nonsense.
+                        
+                        Only reject the question if it is unclear, off-topic, or spam. Simple questions should be allowed!`
+                    },
                     { role: "user", content: question }
                 ],
             },
@@ -21,20 +30,20 @@ const moderateQuestion = async (question) => {
             }
         );
 
-        console.log("API Response:", response.data); // Log entire response for debugging
+        console.log("API Response:", response.data);
 
         if (!response.data || !response.data.choices || response.data.choices.length === 0) {
             console.error("Invalid API response format:", response.data);
-            return false; // Block question if API response is invalid
+            return { status: "error", message: "Invalid API response" };
         }
 
         const result = response.data.choices[0].message.content.trim().toLowerCase();
-        console.log("Moderation result:", result); // Debug API output
+        console.log("Moderation result:", result);
 
-        return result === "valid";
+        return { status: result };
     } catch (error) {
         console.error("Moderation API Error:", error.response ? error.response.data : error.message);
-        return false; // Block question if API request fails
+        return { status: "error", message: "Moderation service failed" };
     }
 };
 

@@ -57,47 +57,65 @@ const AskQuestion = () => {
     e.preventDefault();
 
     if (!user) {
-      alert("Please log in to ask a question.");
-      return;
+        alert("Please log in to ask a question.");
+        return;
     }
 
     if (!validateForm()) return;
 
-    // Ensure `user_metadata` exists
-    const userRole = user?.user_metadata?.role || "student"; // Default to student if missing
+    const userRole = user?.user_metadata?.role || "student"; 
 
     if (userRole === "student") {
-        const isValid = await moderateQuestion(`${title} ${details}`);
-        if (!isValid) {
-            setErrors({ title: "Your question was rejected due to spam/inappropriate content." });
+        const moderationResult = await moderateQuestion(`${title} ${details}`);
+        
+
+        if (moderationResult.status.includes("valid")) { 
+            console.log("✅ Question approved for posting.");
+        } else {
+            alert("Question rejected. Reason");
+            let errorMessage = "Your question was rejected.";
+
+            if (moderationResult.status === "unclear") {
+                errorMessage = "Your question lacks clarity. Please rephrase it.";
+            } else if (moderationResult.status === "off-topic") {
+                errorMessage = "Your question is not academic-related.";
+            } else if (moderationResult.status === "spam") {
+                errorMessage = "Your question was flagged as spam.";
+            }
+
+            setErrors({ title: errorMessage });
             return;
         }
+    
+
+
+
     }
 
     const formattedTags = tags.split(",").map(tag => tag.trim());
 
     try {
-      const { error } = await supabase.from("questions").insert([
-        {
-          user_id: user.id,
-          title,
-          details,
-          subject,
-          grade,
-          tags: formattedTags,
-        },
-      ]);
+        const { error } = await supabase.from("questions").insert([
+            {
+                user_id: user.id,
+                title,
+                details,
+                subject,
+                grade,
+                tags: formattedTags,
+            },
+        ]);
 
-      if (error) {
-        console.error("Error inserting question:", error);
-        alert("Error submitting question. Please try again.");
-      } else {
-        alert("Question added successfully");
-        navigate("/questions");
-      }
+        if (error) {
+            console.error("Error inserting question:", error);
+            alert("Error submitting question. Please try again.");
+        } else {
+            alert("Question added successfully");
+            navigate("/questions");
+        }
     } catch (error) {
-      console.error("An unexpected error occurred:", error);
-      alert("An unexpected error occurred. Please try again later.");
+        console.error("An unexpected error occurred:", error);
+        alert("An unexpected error occurred. Please try again later.");
     }
 
     setTitle("");
@@ -106,7 +124,8 @@ const AskQuestion = () => {
     setGrade("");
     setTags("");
     setErrors({});
-  };
+};
+
 
   return (
     <div className="max-w-3xl mx-auto">

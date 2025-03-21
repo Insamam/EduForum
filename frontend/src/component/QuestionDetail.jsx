@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import recommendBestAnswer from "./recommendBestAnswer"; // Import the function
+
 import {
   ThumbsUp,
   ThumbsDown,
@@ -28,9 +30,7 @@ const QuestionDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDetails, setEditedDetails] = useState("");
-  const [editingAnswerId, setEditingAnswerId] = useState(null);
-  const [editedAnswerText, setEditedAnswerText] = useState("");
-
+  const [recommendedAnswerId, setRecommendedAnswerId] = useState(null); // Add state
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -44,7 +44,7 @@ const QuestionDetail = () => {
           .select('*')
           .eq('user_id', session.user.id)
           .single();
-        
+
         setIsTeacher(!!teacherData);
       }
     };
@@ -88,6 +88,16 @@ const QuestionDetail = () => {
     fetchQuestion();
     fetchAnswers();
   }, [id]);
+
+  useEffect(() => {
+    const getRecommendedAnswer = async () => {
+      if (answers.length > 0 && question) {
+        const recommendedId = await recommendBestAnswer(question.details, answers);
+        setRecommendedAnswerId(recommendedId);
+      }
+    };
+    getRecommendedAnswer();
+  }, [answers, question]);
 
   const handleQuestionLike = async () => {
     if (!user) return alert("Please log in to like the question.");
@@ -228,7 +238,7 @@ const QuestionDetail = () => {
     }
 
     // Update answers list to reflect verification
-    setAnswers(answers.map(answer => 
+    setAnswers(answers.map(answer =>
       answer.id === answerId ? { ...answer, is_verified: true } : answer
     ));
   };
@@ -240,9 +250,9 @@ const QuestionDetail = () => {
 
     const { error } = await supabase
       .from("answers")
-      .insert([{ 
-        answer_text: answerText, 
-        question_id: id, 
+      .insert([{
+        answer_text: answerText,
+        question_id: id,
         user_id: user.id,
         is_verified: false
       }]);
@@ -267,14 +277,14 @@ const QuestionDetail = () => {
   const handleEditQuestion = async () => {
     if (!user) return alert("Please log in to edit the question.");
     if (user.id !== question.user_id) return alert("You can only edit your own questions.");
-    
+
     if (!editedTitle.trim() || !editedDetails.trim()) {
       return alert("Title and details cannot be empty.");
     }
 
     const { error } = await supabase
       .from("questions")
-      .update({ 
+      .update({
         title: editedTitle,
         details: editedDetails,
         updated_at: new Date().toISOString()
@@ -316,28 +326,17 @@ const QuestionDetail = () => {
     navigate("/");
   };
 
-  const handleSaveAnswerEdit = async (answerId) => {
-  if (!editedAnswerText.trim()) return alert("Answer cannot be empty.");
+  const reorderAnswers = (answers, recommendedId) => {
+    if (!recommendedId) return answers;
 
-  const { error } = await supabase
-    .from("answers")
-    .update({ answer_text: editedAnswerText })
-    .eq("id", answerId);
+    const recommendedIndex = answers.findIndex((answer) => answer.id === recommendedId);
+    if (recommendedIndex === -1) return answers;
 
-  if (error) {
-    console.error("Error updating answer:", error);
-    return alert("Failed to update answer.");
-  }
+    const recommendedAnswer = answers.splice(recommendedIndex, 1)[0];
+    return [recommendedAnswer, ...answers];
+  };
 
-  setAnswers((prev) =>
-    prev.map((ans) =>
-      ans.id === answerId ? { ...ans, answer_text: editedAnswerText } : ans
-    )
-  );
-
-  setEditingAnswerId(null);
-};
-
+  const orderedAnswers = reorderAnswers([...answers], recommendedAnswerId);
 
   if (loading) return <p>Loading...</p>;
   if (!question) return <p>Question not found.</p>;
@@ -423,69 +422,49 @@ const QuestionDetail = () => {
         <h2 className="text-3xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
           <MessageCircle className="text-indigo-600" size={26} /> Answers
         </h2>
-        {answers.map((answer) => (
-  <div key={answer.id} className="p-6 bg-gray-50 rounded-xl mb-6 border border-gray-200 transition-shadow duration-300 hover:shadow-md">
-    {editingAnswerId === answer.id ? (
-      // Edit Mode
-      <div>
-        <textarea
-          className="w-full p-4 border rounded-xl mb-4 focus:ring-2 focus:ring-blue-200"
-          value={editedAnswerText}
-          onChange={(e) => setEditedAnswerText(e.target.value)}
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleSaveAnswerEdit(answer.id)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <Save size={20} /> Save
-          </button>
-          <button
-            onClick={() => setEditingAnswerId(null)}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <X size={20} /> Cancel
-          </button>
-        </div>
-      </div>
-    ) : (
-      // Normal Mode
-      <div className="flex justify-between items-start">
-        <p className="text-gray-800 leading-relaxed">{answer.answer_text}</p>
-        <div className="flex gap-2">
-          {user && user.id === answer.user_id && (
-            <button
-              onClick={() => {
-                setEditingAnswerId(answer.id);
-                setEditedAnswerText(answer.answer_text);
-              }}
-              className="text-blue-600 hover:text-blue-800 p-2 rounded-lg transition-colors duration-200"
-            >
-              <Edit size={20} />
-            </button>
-          )}
-        </div>
-      </div>
-    )}
-
-    <div className="flex items-center justify-between mt-3">
-      <div className="text-sm text-gray-600 flex items-center">
-        <User className="mr-2" size={18} /> {answer.users?.full_name}
-      </div>
-      <div className="flex items-center space-x-3">
-        <button onClick={() => handleVote(answer.id, 1)} className="text-green-600 hover:text-green-800 transition-colors duration-200">
-          <ThumbsUp size={22} />
-        </button>
-        <span className="text-gray-700">{answer.like_count || 0}</span>
-        <button onClick={() => handleVote(answer.id, -1)} className="text-red-600 hover:text-red-800 transition-colors duration-200">
-          <ThumbsDown size={22} />
-        </button>
-        <span className="text-gray-700">{answer.dislike_count || 0}</span>
-      </div>
-    </div>
-  </div>
-))}
-
+        {orderedAnswers.map((answer) => (
+          <div key={answer.id} className={`p-6 bg-gray-50 rounded-xl mb-6 border border-gray-200 transition-shadow duration-300 hover:shadow-md ${recommendedAnswerId === answer.id ? 'border-blue-500 shadow-lg' : ''}`}>
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-gray-800 leading-relaxed">
+                {answer.answer_text}
+                {recommendedAnswerId === answer.id && (
+                  <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">
+                    AI Recommended
+                  </span>
+                )}
+              </p>
+              {answer.is_verified && (
+                <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                  <CheckCircle size={16} />
+                  <span className="text-sm font-medium">Verified Teacher</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600 flex items-center">
+                <User className="mr-2" size={18} /> {answer.users?.full_name}
+              </div>
+              <div className="flex items-center space-x-3">
+                {isTeacher && !answer.is_verified && (
+                  <button
+                    onClick={() => handleVerifyAnswer(answer.id)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2"
+                  >
+                    <CheckCircle size={16} /> Verify
+                  </button>
+                )}
+                <button onClick={() => handleVote(answer.id, 1)} className="text-green-600 hover:text-green-800 transition-colors duration-200">
+                  <ThumbsUp size={22} />
+                </button>
+                <span className="text-gray-700">{answer.like_count || 0}</span>
+                <button onClick={() => handleVote(answer.id, -1)} className="text-red-600 hover:text-red-800 transition-colors duration-200">
+                  <ThumbsDown size={22} />
+                </button>
+                <span className="text-gray-700">{answer.dislike_count || 0}</span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Answer Form */}
