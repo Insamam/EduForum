@@ -75,7 +75,6 @@ function PostsList({ posts, onUpdate, onDelete }) {
       .eq("id", postId);
 
     if (error) {
-      console.error("Error updating question:", error);
       return alert("Failed to update question.");
     }
 
@@ -94,7 +93,6 @@ function PostsList({ posts, onUpdate, onDelete }) {
       .eq("id", postId);
 
     if (error) {
-      console.error("Error deleting question:", error);
       return alert("Failed to delete question.");
     }
 
@@ -303,7 +301,6 @@ function Dashboard() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-      // Fetch user data
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select(`
@@ -318,7 +315,6 @@ function Dashboard() {
         setUserClassStream(userData.students?.grade || 'No Class');
       }
 
-      // Fetch user questions with answers and their details
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
         .select(`
@@ -344,7 +340,6 @@ function Dashboard() {
         }));
         setUserQuestions(questionsWithCounts);
         
-        // Calculate stats
         const totalLikes = questionsWithCounts.reduce((sum, q) => sum + (q.like_count || 0), 0);
         setStats({
           questionsCount: questionsWithCounts.length,

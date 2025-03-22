@@ -1,4 +1,7 @@
 import axios from "axios";
+
+
+const API_KEY = import.meta.env.VITE_API_KEY;
 const moderateQuestion = async (question) => {
     try {
         console.log("Moderating question:", question);
@@ -24,25 +27,21 @@ const moderateQuestion = async (question) => {
             },
             {
                 headers: {
-                    "Authorization": `Bearer d65af53bd97141e65b94651689e399b21f3fbb584bf323a4225181f228d421b5`,
+                    "Authorization": `Bearer ${API_KEY}`,
                     "Content-Type": "application/json",
                 },
             }
         );
 
-        console.log("API Response:", response.data);
-
         if (!response.data || !response.data.choices || response.data.choices.length === 0) {
-            console.error("Invalid API response format:", response.data);
+            
             return { status: "error", message: "Invalid API response" };
         }
 
         const result = response.data.choices[0].message.content.trim().toLowerCase();
-        console.log("Moderation result:", result);
-
+     
         return { status: result };
     } catch (error) {
-        console.error("Moderation API Error:", error.response ? error.response.data : error.message);
         return { status: "error", message: "Moderation service failed" };
     }
 };

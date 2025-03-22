@@ -32,7 +32,6 @@ const App = () => {
 
     fetchUser();
 
-    // Listen for auth state changes (Login/Logout)
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
@@ -62,29 +61,8 @@ const App = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/chatbot" element={<ChatBot />} />
       </Routes>
-      {/*changes to hide footer  */}
       {location.pathname !== "/chatbot"&& !location.pathname.startsWith('/Auth' || '/auth') && <Footer />}
     </div>
-  // const location = useLocation(); // Get the current route
-  // const isHomePage = location.pathname === "/"; // Check if it's the home page
-
-  // return (
-  //   <div>
-  //     {/* Pass a prop to Navbar to determine transparency */}
-  //     <Navbar isHomePage={isHomePage} />
-
-  //     <Routes>
-  //       <Route path="/" element={<Home />} />
-  //       <Route path="/questions" element={<Question />} />
-  //       <Route path="/questions/:id" element={<QuestionDetail />} />
-  //       <Route path="/ask" element={<AskQuestion />} />
-  //       <Route path="/student-login" element={<StudentLogin />} />
-  //       <Route path="/student-register" element={<StudentRegister />} />
-  //       <Route path="/profile" element={<Profile />} />
-  //     </Routes>
-
-  //     <Footer />
-  //   </div>
   );
 };
 

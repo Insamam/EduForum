@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Clipboard} from 'lucide-react';
+
+const API_KEY = import.meta.env.VITE_API_KEY;
+
 function ChatBot() {
     const [messages, setMessages] = useState([
         { role: 'system', content: 'Hello!!!!' },
@@ -24,7 +27,7 @@ function ChatBot() {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer d65af53bd97141e65b94651689e399b21f3fbb584bf323a4225181f228d421b5`,
+                        'Authorization': `Bearer ${API_KEY}`,
                         'Content-Type': 'application/json',
                     },
                 }
@@ -33,7 +36,7 @@ function ChatBot() {
             const botResponse = response.data.choices[0].message;
             setMessages([...updatedMessages, botResponse]);
         } catch (error) {
-            console.error('Error sending message:', error);
+            
             setMessages([
                 ...updatedMessages,
                 { role: 'assistant', content: 'Sorry, an error occurred.' },

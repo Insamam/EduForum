@@ -33,7 +33,7 @@ const TeacherLogin = ({ setUser }) => {
       .from("users")
       .select("*")
       .eq("id", data.user.id)
-      .maybeSingle(); // Prevents "multiple (or no) rows returned" error
+      .maybeSingle(); 
 
     if (userError) {
       setError(`Error fetching user : ${userError}`);
@@ -51,7 +51,7 @@ const TeacherLogin = ({ setUser }) => {
     }
 
     else {
-      setUser(data.user); // Store logged-in user
+      setUser(data.user);
       navigate('/');
     }
   };

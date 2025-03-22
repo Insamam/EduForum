@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import recommendBestAnswer from "./recommendBestAnswer"; // Import the function
+import recommendBestAnswer from "./recommendBestAnswer"; 
 
 import {
   ThumbsUp,
@@ -30,14 +30,13 @@ const QuestionDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDetails, setEditedDetails] = useState("");
-  const [recommendedAnswerId, setRecommendedAnswerId] = useState(null); // Add state
+  const [recommendedAnswerId, setRecommendedAnswerId] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
-      // Check if user is a teacher
       if (session?.user) {
         const { data: teacherData } = await supabase
           .from('teachers')
@@ -65,7 +64,6 @@ const QuestionDetail = () => {
         .select("*, users(full_name)")
         .eq("id", id)
         .single();
-      if (error) console.error("Fetch Question Error:", error);
       if (questionData) {
         setQuestion(questionData);
         setEditedTitle(questionData.title);
@@ -81,7 +79,6 @@ const QuestionDetail = () => {
         .eq("question_id", id)
         .order("like_count", { ascending: false });
 
-      if (error) console.error("Fetch Answers Error:", error);
       if (answersData) setAnswers(answersData);
     };
 
@@ -120,13 +117,11 @@ const QuestionDetail = () => {
         .delete()
         .eq("id", existingVote.id);
 
-      if (error) console.error("Unlike Question Error:", error);
     } else {
       const { error } = await supabase
         .from("question_votes")
         .insert([{ user_id: user.id, question_id: id }]);
 
-      if (error) console.error("Like Question Error:", error);
     }
 
     await updateQuestionLikes();
@@ -177,20 +172,17 @@ const QuestionDetail = () => {
           .from("answer_votes")
           .delete()
           .eq("id", existingVote.id);
-        if (error) console.error("Delete Vote Error:", error);
       } else {
         const { error } = await supabase
           .from("answer_votes")
           .update({ vote_type: voteType })
           .eq("id", existingVote.id);
-        if (error) console.error("Update Vote Error:", error);
       }
     } else {
       const { error } = await supabase
         .from("answer_votes")
         .insert([{ user_id: user.id, answer_id: answerId, vote_type: voteType }]);
 
-      if (error) console.error("Insert Vote Error:", error);
     }
 
     await updateAnswerVotes(answerId);
@@ -237,7 +229,6 @@ const QuestionDetail = () => {
       return;
     }
 
-    // Update answers list to reflect verification
     setAnswers(answers.map(answer =>
       answer.id === answerId ? { ...answer, is_verified: true } : answer
     ));

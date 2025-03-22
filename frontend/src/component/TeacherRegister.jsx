@@ -17,13 +17,11 @@ const TeacherRegister = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Validate form before submission
   const validateForm = () => {
     const newErrors = {};
     if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
@@ -38,7 +36,6 @@ const TeacherRegister = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
   e.preventDefault();
   if (!validateForm()) return;
@@ -47,10 +44,9 @@ const TeacherRegister = () => {
   try {
     console.log("Starting registration...");
 
-    // Step 1: Sign up the user in Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email: formData.email,
-      password: formData.password, // Supabase Auth handles this
+      password: formData.password, 
     });
 
     if (error) throw error;
@@ -58,15 +54,14 @@ const TeacherRegister = () => {
 
     console.log("User registered:", data.user);
 
-    // Step 2: Insert user details into 'users' table, including the password
     const { error: userError } = await supabase
       .from("users")
       .insert([
         {
-          id: data.user.id, // Ensure it matches the auth user ID
+          id: data.user.id, 
           full_name: formData.fullName,
           email: formData.email,
-          password: formData.password, // Include password for student login consistency
+          password: formData.password,
           role: "teacher",
         },
       ]);
@@ -75,10 +70,9 @@ const TeacherRegister = () => {
 
     console.log("User inserted into 'users' table");
 
-    // Step 3: Insert teacher details into 'teachers' table
     const { error: teacherError } = await supabase.from("teachers").insert([
       {
-        user_id: data.user.id, // Link to users table correctly
+        user_id: data.user.id, 
         school_name: formData.schoolName,
       },
     ]);

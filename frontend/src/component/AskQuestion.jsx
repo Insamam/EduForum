@@ -25,7 +25,6 @@ const AskQuestion = () => {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
       } catch (error) {
-        console.error("Error fetching session:", error);
         setUser(null);
       }
     };
@@ -72,7 +71,7 @@ const AskQuestion = () => {
         if (moderationResult.status.includes("valid")) { 
             console.log("✅ Question approved for posting.");
         } else {
-            alert("Question rejected. Reason");
+            alert("Question rejected.");
             let errorMessage = "Your question was rejected.";
 
             if (moderationResult.status === "unclear") {
@@ -107,14 +106,12 @@ const AskQuestion = () => {
         ]);
 
         if (error) {
-            console.error("Error inserting question:", error);
             alert("Error submitting question. Please try again.");
         } else {
             alert("Question added successfully");
             navigate("/questions");
         }
     } catch (error) {
-        console.error("An unexpected error occurred:", error);
         alert("An unexpected error occurred. Please try again later.");
     }
 

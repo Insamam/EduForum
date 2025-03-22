@@ -26,8 +26,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      {/* <section className="mb-12">
+      <section className="mb-12">
         <h2 className="text-3xl font-bold text-center mb-10">Why EduForum?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <FeatureCard
@@ -46,27 +45,7 @@ const Home = () => {
             description="Get insights and answers from verified teachers and education experts."
           />
         </div>
-      </section> */}
-      <section className="mb-12">
-  <h2 className="text-3xl font-bold text-center mb-10">Why EduForum?</h2>
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <FeatureCard
-      icon={<MessageSquare className="h-8 w-8 text-indigo-600" />}
-      title="Peer Learning"
-      description="Connect with fellow students, ask questions, and share knowledge in a supportive environment."
-    />
-    <FeatureCard
-      icon={<BookOpenCheck className="h-8 w-8 text-indigo-600" />}
-      title="Grade-Specific Content"
-      description="Find questions and answers relevant to your grade level and curriculum."
-    />
-    <FeatureCard
-      icon={<Award className="h-8 w-8 text-indigo-600" />}
-      title="Teacher Guidance"
-      description="Get insights and answers from verified teachers and education experts."
-    />
-  </div>
-</section>
+      </section>
 
       {/* Popular Subjects */}
       <section className="mb-12">
@@ -84,30 +63,20 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
-      {/* <section className="bg-gradient-to-r from-indigo-100 to-indigo-200 py-12 rounded-lg mb-10 shadow-md">
+      
+      <section className="bg-gradient-to-r from-indigo-100 to-indigo-200 py-12 rounded-lg mb-10 shadow-md">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center text-indigo-900 mb-8">Our Community</h2>
+          <h2 className="text-3xl font-bold text-center text-black mb-8">Our Community</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <StatCard number={10000} label="Students" />
             <StatCard number={5000} label="Questions Answered" />
             <StatCard number={500} label="Verified Teachers" />
           </div>
         </div>
-      </section> */}
-      <section className="bg-gradient-to-r from-indigo-100 to-indigo-200 py-12 rounded-lg mb-10 shadow-md">
-  <div className="container mx-auto px-6">
-    <h2 className="text-3xl font-bold text-center text-black mb-8">Our Community</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-      <StatCard number={10000} label="Students" />
-      <StatCard number={5000} label="Questions Answered" />
-      <StatCard number={500} label="Verified Teachers" />
-    </div>
-  </div>
-</section>
+      </section>
 
-      {/* Testimonials */}
-      {/* <section className="mb-12">
+     
+      <section className="mb-12">
         <h2 className="text-3xl font-bold text-center mb-10">What Students Say</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Testimonial
@@ -123,38 +92,12 @@ const Home = () => {
             initials="AP"
           />
         </div>
-      </section> */}
-      <section className="mb-12">
-  <h2 className="text-3xl font-bold text-center mb-10">What Students Say</h2>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-    <Testimonial
-      name="Rahul Singh"
-      location="Grade 11, Delhi"
-      text="EduForum helped me understand complex math concepts through peer explanations. The community is supportive and I've improved my grades significantly!"
-      initials="RS"
-    />
-    <Testimonial 
-      name="Ananya Patel" 
-      location="Grade 12, Rajasthan" 
-      text="As a student from a rural area, I didn't have access to tutors. EduForum connected me with peers and teachers who helped me prepare for my exams."
-      initials="AP"
-    />
-  </div>
-</section>
+      </section>
     </div>
   );
 };
 
-// Feature Card Component
-// const FeatureCard = ({ icon, title, description }) => (
-//   <div className="bg-white p-6 rounded-lg shadow-md text-center">
-//     <div className="bg-indigo-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-//       {icon}
-//     </div>
-//     <h3 className="text-xl font-semibold mb-3">{title}</h3>
-//     <p className="text-gray-600">{description}</p>
-//   </div>
-// );
+
 const FeatureCard = ({ icon, title, description }) => (
   <div className="bg-white p-6 rounded-lg shadow-md text-center transition-transform duration-300 hover:scale-105 hover:shadow-lg">
     <div className="bg-indigo-100 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -165,19 +108,7 @@ const FeatureCard = ({ icon, title, description }) => (
   </div>
 );
 
-// Stats Card Component with Scroll Trigger Animation
-// const StatCard = ({ number, label }) => {
-//   const { ref, inView } = useInView({ triggerOnce: true });
 
-//   return (
-//     <div ref={ref} className="bg-white p-4 rounded-md shadow-sm hover:shadow-md transition duration-300">
-//       <div className="text-3xl font-bold text-indigo-800">
-//         {inView && <CountUp end={number} duration={2} separator="," suffix='+' />}
-//       </div>
-//       <p className="text-gray-700 text-sm mt-1">{label}</p>
-//     </div>
-//   );
-// };
 const StatCard = ({ number, label }) => {
   const { ref, inView } = useInView({ triggerOnce: true });
 
@@ -194,21 +125,6 @@ const StatCard = ({ number, label }) => {
   );
 };
 
-// Testimonial Component
-// const Testimonial = ({ name, location, text, initials }) => (
-//   <div className="bg-white p-6 rounded-lg shadow-md">
-//     <p className="text-gray-600 italic mb-4">"{text}"</p>
-//     <div className="flex items-center">
-//       <div className="w-10 h-10 bg-indigo-200 rounded-full flex items-center justify-center mr-3">
-//         <span className="text-indigo-700 font-semibold">{initials}</span>
-//       </div>
-//       <div>
-//         <p className="font-semibold">{name}</p>
-//         <p className="text-sm text-gray-500">{location}</p>
-//       </div>
-//     </div>
-//   </div>
-// );
 const Testimonial = ({ name, location, text, initials }) => (
   <div className="bg-white p-6 rounded-lg shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
     <p className="text-gray-600 italic mb-4">"{text}"</p>

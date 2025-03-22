@@ -30,21 +30,9 @@ const Questions = () => {
     fetchQuestions();
   }, []);
 
-  // const fetchQuestions = async () => {
-  //   const { data, error } = await supabase
-  //     .from("questions")
-  //     .select(`id, title, details, subject, grade, tags, created_at`)
-  //     .order("created_at", { ascending: false });
-
-  //   if (error) {
-  //     console.error("Error fetching questions:", error);
-  //   } else {
-  //     setQuestions(data);
-  //   }
-  // };
+ 
 const fetchQuestions = async () => {
   try {
-    // Fetch questions from "questions" table
     const { data: questionsData, error: questionsError } = await supabase
       .from("questions")
       .select("id, title, details, subject, grade, tags, author, created_at")
@@ -52,39 +40,34 @@ const fetchQuestions = async () => {
 
     if (questionsError) throw questionsError;
 
-    // Fetch total likes (votes) per question
     const { data: votesData, error: votesError } = await supabase
       .from("question_votes")
       .select("question_id");
 
     if (votesError) throw votesError;
 
-    // Count the number of votes (likes) per question
     const votesMap = {};
     votesData.forEach(({ question_id }) => {
       if (!votesMap[question_id]) votesMap[question_id] = 0;
       votesMap[question_id] += 1;
     });
 
-    // Fetch total answers count per question
     const { data: answersData, error: answersError } = await supabase
       .from("answers")
       .select("question_id");
 
     if (answersError) throw answersError;
 
-    // Count the number of answers per question
     const answersMap = {};
     answersData.forEach(({ question_id }) => {
       if (!answersMap[question_id]) answersMap[question_id] = 0;
       answersMap[question_id] += 1;
     });
 
-    // Merge likes and answers count into questions data
     const updatedQuestions = questionsData.map((q) => ({
       ...q,
-      votes: votesMap[q.id] || 0, // Get votes from votesMap (default 0)
-      answers_count: answersMap[q.id] || 0, // Get answers count (default 0)
+      votes: votesMap[q.id] || 0, 
+      answers_count: answersMap[q.id] || 0, 
     }));
 
     setQuestions(updatedQuestions);
@@ -94,10 +77,6 @@ const fetchQuestions = async () => {
 };
 
 
-
-
-
-  // Filter questions based on search, subject, and grade
   const filteredQuestions = questions.filter((question) => {
     const subjectMatch =
       selectedSubject === "All Subjects" || question.subject === selectedSubject;
@@ -109,7 +88,6 @@ const fetchQuestions = async () => {
     return subjectMatch && gradeMatch && searchMatch;
   });
 
-  // Sorting logic
   const sortedQuestions = [...filteredQuestions].sort((a, b) => {
     if (sortBy === "newest") return new Date(b.created_at) - new Date(a.created_at);
     return 0;
@@ -118,19 +96,17 @@ const fetchQuestions = async () => {
   return (
     <div className="container mx-auto p-6">
       {/* Header Section */}
-<div className="flex justify-between items-center mb-6">
-  {/* Centered Heading */}
-  <h1 className="text-3xl font-bold text-indigo-800 flex-1 text-center">Questions</h1>
-  
-
-  {/* Ask Question Button - Positioned Above Filters */}
-  <Link 
-    to="/ask" 
-    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md shadow-md transition-all"
-  >
-    Ask Question
-  </Link>
-</div>
+    <div className="flex justify-between items-center mb-6">
+      {/* Centered Heading */}
+      <h1 className="text-3xl font-bold text-indigo-800 flex-1 text-center">Questions</h1>
+      
+      <Link 
+        to="/ask" 
+        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md shadow-md transition-all"
+      >
+        Ask Question
+      </Link>
+    </div>
 
 
       {/* Search & Filters Section */}
@@ -192,34 +168,27 @@ const fetchQuestions = async () => {
                 </span>
               ))}
             </div>
-            {/* <div className="flex items-center text-sm text-gray-500">
-              <BookOpen className="h-4 w-4 mr-2 text-indigo-500" />
-              <span className="mr-4">{question.subject}</span>
-              <span className="bg-gray-200 px-2 py-1 rounded text-gray-700">{question.grade}</span>
-            </div> */}
+            
           <div className="flex items-center text-sm text-gray-500 space-x-4 flex-wrap">
-  {/* Subject */}
-  <BookOpen className="h-4 w-4 text-indigo-500" />
-  <span className="mr-4">{question.subject}</span>
+            {/* Subject */}
+            <BookOpen className="h-4 w-4 text-indigo-500" />
+            <span className="mr-4">{question.subject}</span>
 
-  {/* Grade */}
-  <span className="bg-gray-200 px-2 py-1 rounded text-gray-700">{question.grade}</span>
+            {/* Grade */}
+            <span className="bg-gray-200 px-2 py-1 rounded text-gray-700">{question.grade}</span>
 
-  {/* Votes */}
-  <div className="flex items-center">
-    <ThumbsUp className="h-4 w-4 mr-1 text-green-600" />
-    <span>{question.votes} votes</span>
-  </div>
+            {/* Votes */}
+            <div className="flex items-center">
+              <ThumbsUp className="h-4 w-4 mr-1 text-green-600" />
+              <span>{question.votes} votes</span>
+            </div>
 
-  {/* Answers */}
-  <div className="flex items-center">
-    <MessageSquare className="h-4 w-4 mr-1 text-indigo-600" />
-    <span>{question.answers_count} answers</span>
-  </div>
-
- 
-  
-</div>
+            {/* Answers */}
+            <div className="flex items-center">
+              <MessageSquare className="h-4 w-4 mr-1 text-indigo-600" />
+              <span>{question.answers_count} answers</span>
+            </div>
+          </div>
 
           </Link>
         </div>

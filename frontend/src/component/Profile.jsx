@@ -15,15 +15,11 @@ const Profile = () => {
       const { data: userSession, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError || !userSession.session) {
-        console.error("Error fetching session:", sessionError);
         navigate("/Auth/student-login");
         return;
       }
 
       const userId = userSession.session.user.id;
-      // console.log("Logged-in User ID:", userId); // Debugging log
-
-      // Fetch user details from 'users' table
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -31,13 +27,10 @@ const Profile = () => {
         .maybeSingle();
 
       if (userError || !userData) {
-        console.error("Error fetching user:", userError);
         return;
       }
 
       setUser(userData);
-
-      // Fetch student or teacher data based on role
       if (userData.role === "student") {
         const { data: studentData, error: studentError } = await supabase
           .from("students")
@@ -62,7 +55,6 @@ const Profile = () => {
     fetchUser();
   }, [navigate]);
 
-  // Logout Function
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/Auth/student-login");
