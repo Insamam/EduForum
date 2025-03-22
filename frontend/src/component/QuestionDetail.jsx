@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import recommendBestAnswer from "./recommendBestAnswer"; 
+import recommendBestAnswer from "./recommendBestAnswer";
 
 import {
   ThumbsUp,
@@ -31,6 +31,8 @@ const QuestionDetail = () => {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDetails, setEditedDetails] = useState("");
   const [recommendedAnswerId, setRecommendedAnswerId] = useState(null);
+  const [editingAnswerId, setEditingAnswerId] = useState(null);
+  const [editedAnswerText, setEditedAnswerText] = useState("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -38,13 +40,20 @@ const QuestionDetail = () => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const { data: teacherData } = await supabase
+        const { data: teacherData, error } = await supabase
           .from('teachers')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .single({
+            headers: { 'Accept': 'application/json' },
+          });
 
-        setIsTeacher(!!teacherData);
+        if (error) {
+          console.error("Error fetching teacher data:", error);
+          setIsTeacher(false); // Default to false if error occurs
+        } else {
+          setIsTeacher(!!teacherData);
+        }
       }
     };
     fetchUser();
@@ -68,6 +77,8 @@ const QuestionDetail = () => {
         setQuestion(questionData);
         setEditedTitle(questionData.title);
         setEditedDetails(questionData.details);
+      } else if (error) {
+        console.error("Error fetching question:", error);
       }
       setLoading(false);
     };
@@ -79,7 +90,11 @@ const QuestionDetail = () => {
         .eq("question_id", id)
         .order("like_count", { ascending: false });
 
-      if (answersData) setAnswers(answersData);
+      if (answersData) {
+        setAnswers(answersData);
+      } else if (error) {
+        console.error("Error fetching answers:", error);
+      }
     };
 
     fetchQuestion();
@@ -116,12 +131,12 @@ const QuestionDetail = () => {
         .from("question_votes")
         .delete()
         .eq("id", existingVote.id);
-
+      if (error) console.error("Error deleting vote:", error);
     } else {
       const { error } = await supabase
         .from("question_votes")
         .insert([{ user_id: user.id, question_id: id }]);
-
+      if (error) console.error("Error inserting vote:", error);
     }
 
     await updateQuestionLikes();
@@ -172,17 +187,19 @@ const QuestionDetail = () => {
           .from("answer_votes")
           .delete()
           .eq("id", existingVote.id);
+        if (error) console.error("Error deleting vote:", error);
       } else {
         const { error } = await supabase
           .from("answer_votes")
           .update({ vote_type: voteType })
           .eq("id", existingVote.id);
+        if (error) console.error("Error updating vote:", error);
       }
     } else {
       const { error } = await supabase
         .from("answer_votes")
         .insert([{ user_id: user.id, answer_id: answerId, vote_type: voteType }]);
-
+      if (error) console.error("Error inserting vote:", error);
     }
 
     await updateAnswerVotes(answerId);
@@ -202,18 +219,23 @@ const QuestionDetail = () => {
     const likeCount = data.filter(vote => vote.vote_type === 1).length;
     const dislikeCount = data.filter(vote => vote.vote_type === -1).length;
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("answers")
       .update({ like_count: likeCount, dislike_count: dislikeCount })
       .eq("id", answerId);
+    if (updateError) console.error("Error updating answer votes:", updateError);
 
-    const { data: updatedAnswers } = await supabase
+    const { data: updatedAnswers, error: answersError } = await supabase
       .from("answers")
       .select("*, users(full_name)")
       .eq("question_id", id)
       .order("like_count", { ascending: false });
 
-    if (updatedAnswers) setAnswers(updatedAnswers);
+    if (updatedAnswers) {
+      setAnswers(updatedAnswers);
+    } else if (answersError) {
+      console.error("Error fetching updated answers:", answersError);
+    }
   };
 
   const handleVerifyAnswer = async (answerId) => {
@@ -256,13 +278,17 @@ const QuestionDetail = () => {
     setAnswerText("");
     setShowAnswerForm(false);
 
-    const { data: updatedAnswers } = await supabase
+    const { data: updatedAnswers, error: answersError } = await supabase
       .from("answers")
       .select("*, users(full_name)")
       .eq("question_id", id)
       .order("like_count", { ascending: false });
 
-    if (updatedAnswers) setAnswers(updatedAnswers);
+    if (updatedAnswers) {
+      setAnswers(updatedAnswers);
+    } else if (answersError) {
+      console.error("Error fetching updated answers:", answersError);
+    }
   };
 
   const handleEditQuestion = async () => {
@@ -328,6 +354,69 @@ const QuestionDetail = () => {
   };
 
   const orderedAnswers = reorderAnswers([...answers], recommendedAnswerId);
+
+  const handleEditAnswer = (answerId, answerText) => {
+    setEditingAnswerId(answerId);
+    setEditedAnswerText(answerText);
+  };
+
+  const handleUpdateAnswer = async (answerId) => {
+    if (!user) return alert("Please log in to edit the answer.");
+    if (!editedAnswerText.trim()) return alert("Answer cannot be empty.");
+
+    const { error } = await supabase
+      .from("answers")
+      .update({ answer_text: editedAnswerText })
+      .eq("id", answerId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error updating answer:", error);
+      return;
+    }
+
+    setEditingAnswerId(null);
+    setEditedAnswerText("");
+
+    const { data: updatedAnswers, error: answersError } = await supabase
+      .from("answers")
+      .select("*, users(full_name)")
+      .eq("question_id", id)
+      .order("like_count", { ascending: false });
+
+    if (updatedAnswers) {
+      setAnswers(updatedAnswers);
+    } else if (answersError) {
+      console.error("Error fetching updated answers:", answersError);
+    }
+  };
+
+  const handleDeleteAnswer = async (answerId) => {
+    if (!user) return alert("Please log in to delete the answer.");
+
+    const { error } = await supabase
+      .from("answers")
+      .delete()
+      .eq("id", answerId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error deleting answer:", error);
+      return;
+    }
+
+    const { data: updatedAnswers, error: answersError } = await supabase
+      .from("answers")
+      .select("*, users(full_name)")
+      .eq("question_id", id)
+      .order("like_count", { ascending: false });
+
+    if (updatedAnswers) {
+      setAnswers(updatedAnswers);
+    } else if (answersError) {
+      console.error("Error fetching updated answers:", answersError);
+    }
+  };
 
   if (loading) return <p>Loading...</p>;
   if (!question) return <p>Question not found.</p>;
@@ -416,14 +505,22 @@ const QuestionDetail = () => {
         {orderedAnswers.map((answer) => (
           <div key={answer.id} className={`p-6 bg-gray-50 rounded-xl mb-6 border border-gray-200 transition-shadow duration-300 hover:shadow-md ${recommendedAnswerId === answer.id ? 'border-blue-500 shadow-lg' : ''}`}>
             <div className="flex justify-between items-start mb-4">
-              <p className="text-gray-800 leading-relaxed">
-                {answer.answer_text}
-                {recommendedAnswerId === answer.id && (
-                  <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">
-                    AI Recommended
-                  </span>
-                )}
-              </p>
+              {editingAnswerId === answer.id ? (
+                <textarea
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={editedAnswerText}
+                  onChange={(e) => setEditedAnswerText(e.target.value)}
+                />
+              ) : (
+                <p className="text-gray-800 leading-relaxed">
+                  {answer.answer_text}
+                  {recommendedAnswerId === answer.id && (
+                    <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">
+                      AI Recommended
+                    </span>
+                  )}
+                </p>
+              )}
               {answer.is_verified && (
                 <div className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full">
                   <CheckCircle size={16} />
@@ -452,6 +549,31 @@ const QuestionDetail = () => {
                   <ThumbsDown size={22} />
                 </button>
                 <span className="text-gray-700">{answer.dislike_count || 0}</span>
+                {user && user.id === answer.user_id && (
+                  <>
+                    {editingAnswerId === answer.id ? (
+                      <button
+                        onClick={() => handleUpdateAnswer(answer.id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-2"
+                      >
+                        <Save size={16} /> Save
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleEditAnswer(answer.id, answer.answer_text)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                      >
+                        <Edit size={20} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteAnswer(answer.id)}
+                      className="text-red-600 hover:text-red-800 transition-colors duration-200"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
