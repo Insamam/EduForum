@@ -37,7 +37,7 @@ Our platform **leverages AI** to:
 ## 🛠 Tech Stack  
 
 - **Frontend:** React.js  
-- **Backend:** Node.js, Express.js  
+- **Backend:** Supabase 
 - **Database:** Supabase  
 - **AI Features:** OpenAI / Custom AI model  
 
