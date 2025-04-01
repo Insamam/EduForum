@@ -1,0 +1,13 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  keep_alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase API
+        run: curl -s -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcWdyb3Bjam9ranhoYXNvYWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMjc5MzMsImV4cCI6MjA1NjkwMzkzM30.Nm6eARngA9rr6HBfaFwZHPbBoF9kwcMLqOIVSHSU61E" \
+          "https://vmqgropcjokjxhasoadn.supabase.co/rest/v1/your_table_name?select=*"
